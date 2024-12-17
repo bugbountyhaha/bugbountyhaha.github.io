@@ -1,1 +1,1 @@
-# ay-minsk.github.io
+# bugbountyhaha.github.io
