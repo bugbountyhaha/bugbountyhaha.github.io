@@ -1,44 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ping Simulation</title>
-    <script>
-        // Ping rate: 1 ping every 0.1 seconds 
-        const pingInterval = 100; // 1000 milliseconds = 1 seconds
-        const targetHost = 'https://dufnepqyrqkvfquogfzmd3hf6iziiwnqz.oast.fun'; // Replace with your target server URL
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
+import threading
+import time
+import requests
 
-        let pingCount = 0;  // To track how many pings have been sent
+app = FastAPI()
+PING_URL = "https://dufnepqyrqkvfquogfzmd3hf6iziiwnqz.oast.fun"  # Change to your target
+PING_RATE = 30  # per second
+pinging = False
 
-        // Function to simulate sending a ping via an HTTP request
-        function sendPing() {
-            fetch(targetHost)
-                .then(response => {
-                    if (response.ok) {
-                        console.log(`Ping #${pingCount + 1}: Successful`);
-                    } else {
-                        console.log(`Ping #${pingCount + 1}: Failed with status ${response.status}`);
-                    }
-                })
-                .catch(error => {
-                    console.log(`Ping #${pingCount + 1}: Failed with error: ${error}`);
-                });
+def ping_loop():
+    while True:
+        try:
+            requests.get(PING_URL, timeout=2)
+        except:
+            pass
+        time.sleep(1 / PING_RATE)
 
-            pingCount++;  // Increment the ping counter
-            console.log(`Ping count: ${pingCount}`);
-        }
+@app.get("/", response_class=PlainTextResponse)
+async def root(request: Request):
+    global pinging
+    if not pinging:
+        threading.Thread(target=ping_loop, daemon=True).start()
+        pinging = True
+        return "Started pinging " + PING_URL
+    else:
+        return "Already pinging " + PING_URL
 
-        // Start sending pings every 6 seconds
-        function startPinging() {
-            setInterval(sendPing, pingInterval);
-        }
-
-        // Begin pinging as soon as the page is loaded
-        window.onload = startPinging;
-    </script>
-</head>
-<body>
-    <h1>Bug Bounty</h1>
-</body>
-</html>
+# Optional: serve static HTML if accessed from browser
+app.mount("/static", StaticFiles(directory="static"), name="static")
